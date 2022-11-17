@@ -21,3 +21,9 @@ The application will have two main pages. One is the lobby where users can creat
 Users will either create or enter a room number to start a race. The instance creating a room will be the host of the room and subsequent instances joining the room will make HTTP requests to the host to 1) get the corpus that is to be typed, 2) post their percentage of text typed, and 3) get the progress of other instances. A post request will be made with each finished word.
 
 The game starts when each joined user readies and ends when all users have finished typing or a preset timeout occurs (for example 3 minutes).
+
+## Building and Running
+
+tldr `make`
+
+The above invokes `stack build` and `stack exec` if you want to do just one action.
