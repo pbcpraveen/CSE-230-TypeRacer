@@ -1,6 +1,6 @@
 module Main (main) where
 
-import Lib
+import Backend (server)
 
 main :: IO ()
-main = someFunc
+main = server
