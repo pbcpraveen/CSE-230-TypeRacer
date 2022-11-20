@@ -3,7 +3,7 @@
 all: build run
 
 build:
-	stack build --ghc-options="-threaded"
+	stack build
 
 run:
 	stack --verbosity error exec TypeRacer-exe

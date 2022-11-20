@@ -7,14 +7,13 @@ packages:
 - completed:
     hackage: brick-1.4@sha256:c262e7a86a8ddcf962cad9e5744f79f98b0dce940ea569c308587a4b5e403a2d,17826
     pantry-tree:
-      size: 6687
       sha256: b7e0f7c4662ff89dcf97966de2f3da52e4dd3b51ebaeba045484a145fd71c9f0
+      size: 6687
   original:
     hackage: brick-1.4
 snapshots:
 - completed:
-    size: 648420
-    url: https://raw.githubusercontent.com/commercialhaskell/stackage-snapshots/master/lts/20/0.yaml
-    sha256: a2cbcd2f37010a64c4ef74c21fd7e55982a07b49840d2bed306f9bac9981a9c3
-  original:
-    url: https://raw.githubusercontent.com/commercialhaskell/stackage-snapshots/master/lts/20/0.yaml
+    sha256: b73b2b116143aea728c70e65c3239188998bac5bc3be56465813dacd74215dc5
+    size: 648424
+    url: https://raw.githubusercontent.com/commercialhaskell/stackage-snapshots/master/lts/20/1.yaml
+  original: lts-20.1
