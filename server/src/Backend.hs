@@ -1,7 +1,7 @@
 module Backend (server) where
 
 import Network.Socket
-import Network.Socket.ByteString (sendAll)
+import Network.Socket.ByteString (sendAll, recv)
 import qualified Data.ByteString.Char8 as BS  -- avoids putStrLn conflict
 
 someFunc :: IO ()
@@ -24,5 +24,7 @@ loop sock = do
 handle :: (Socket, SockAddr) -> IO ()
 handle (sock, addr) = do
   print addr                        -- print the client addr
+  byteStr <- recv sock 1024
+  print byteStr
   sendAll sock $ BS.pack "Hi back!"
   close sock                        -- close for now for testing
