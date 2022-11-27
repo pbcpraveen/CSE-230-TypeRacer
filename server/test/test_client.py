@@ -9,10 +9,8 @@ with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
     s.connect((HOST, PORT))
     welcome_msg = s.recv(1024)
     print(welcome_msg)
-    welcome_msg = s.recv(1024)
-    print(welcome_msg)
-    welcome_msg = s.recv(1024)
-    print(welcome_msg)
+    corpus = s.recv(1024)
+    print(corpus)
     for i in range(5):
         msg = input(f"${i} ")
         s.sendall(msg.encode("ascii"))
