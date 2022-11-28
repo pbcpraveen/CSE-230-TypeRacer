@@ -11,6 +11,7 @@ import Control.Monad.State
 import Control.Concurrent (threadDelay)
 
 import System.Timeout (timeout)
+import Text.Read (readMaybe)
 
 corpus :: String
 corpus = "The quick brown fox jumps over the lazy dog"
@@ -76,10 +77,13 @@ receiveProgress ((addr, Client sock _):xs) = do
   case maybeMsg of
     Nothing  -> receiveProgress xs  -- just ignore the client if they don't respond
     Just msg -> do
-      let new_progress = read (BS.unpack msg) :: Double
-      dict <- get  -- get old dict
-      put (adjust (\(Client s _) -> Client s new_progress) addr dict)  -- update dict
-      receiveProgress xs  -- move on
+      lift (print msg)
+      case readMaybe (BS.unpack msg) :: Maybe Double of
+        Nothing        -> receiveProgress xs
+        Just new_prog  -> do
+          dict <- get  -- get old dict
+          put (adjust (\(Client s _) -> Client s new_prog) addr dict)  -- update dict
+          receiveProgress xs  -- move on
 
 gameShouldContinue :: Map SockAddr Client -> Bool
 gameShouldContinue dict = helper (toList dict)
