@@ -25,6 +25,8 @@ dependencies:
 - bytestring
 - mtl
 - containers
+- random
+- array
 
 ghc-options:
 - -Wall
@@ -61,3 +63,4 @@ tests:
     - -with-rtsopts=-N
     dependencies:
     - Backend
+    - hspec

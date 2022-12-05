@@ -1,6 +1,6 @@
 module Main (main) where
 
-import Backend (server)
+import Backend (topServer)
 
 main :: IO ()
-main = server
+main = topServer
