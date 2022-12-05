@@ -21,8 +21,16 @@ description:         Please see the README on GitHub at <https://github.com/gith
 
 dependencies:
 - base >= 4.7 && < 5
-- brick
+- brick >= 0.21
 - network
+- bytestring
+- containers
+- mtl
+- vty >= 5.36
+- microlens >= 0.3.0.0
+- microlens-th
+- microlens-mtl
+- time
 
 ghc-options:
 - -Wall
@@ -59,3 +67,4 @@ tests:
     - -with-rtsopts=-N
     dependencies:
     - TypeRacer
+    - Homepage

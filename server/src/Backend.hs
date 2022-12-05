@@ -1,4 +1,4 @@
-module Backend (server) where
+module Backend where
 
 import Prelude hiding (length)
 
