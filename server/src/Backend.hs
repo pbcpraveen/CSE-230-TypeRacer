@@ -13,6 +13,9 @@ import Control.Concurrent (threadDelay)
 import System.Timeout (timeout)
 import Text.Read (readMaybe)
 
+welcomeMsg :: String
+welcomeMsg = "Welcome to TypeRacer!"
+
 corpus :: String
 corpus = "The quick brown fox jumps over the lazy dog"
 
@@ -67,7 +70,7 @@ joinGame sock n = do
   lift (print addr)
   dict <- get
   put (insert addr (Client {target_sock = client_sock, progress = -1}) dict)  -- add the client to the map
-  lift (signal client_sock "Welcome to TypeRacer!")
+  lift (signal client_sock welcomeMsg)
   joinGame sock (n-1)
 
 receiveProgress :: [(SockAddr, Client)] -> StateT (Map SockAddr Client) IO ()
