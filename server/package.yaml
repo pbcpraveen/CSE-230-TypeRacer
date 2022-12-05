@@ -25,6 +25,8 @@ dependencies:
 - bytestring
 - mtl
 - containers
+- random
+- array
 
 ghc-options:
 - -Wall
