@@ -23,7 +23,7 @@ topServer = do
       let lenCorpus = read len :: Int
       corpus <- generateCorpus lenCorpus
       server nPlayers corpus
-    _          -> putStrLn "Usage: server <NumOfPlayers> <LenOfCorpus>"
+    _          -> putStrLn usageMsg
 
 server :: Int -> String -> IO ()
 server nPlayers corpus = do
@@ -101,7 +101,7 @@ gameShouldContinue dict = helper (toList dict)
 gameLoop :: Bool -> StateT (Map SockAddr Client) IO ()
 gameLoop False = do
   dict <- get
-  lift (broadcastMsg dict "Game Over")
+  lift (broadcastMsg dict gameOverMsg)
 gameLoop True  = do
   dict <- get
   -- lift (print dict)

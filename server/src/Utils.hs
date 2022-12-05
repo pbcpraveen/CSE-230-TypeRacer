@@ -3,6 +3,8 @@
 {-# HLINT ignore "Eta reduce" #-}
 module Utils (
   welcomeMsg,
+  usageMsg,
+  gameOverMsg,
   fileName,
   delay,
   recvTimeout,
@@ -25,6 +27,12 @@ import Control.Monad
 
 welcomeMsg :: String
 welcomeMsg = "Welcome to TypeRacer!"
+
+usageMsg :: String
+usageMsg = "Usage: server <NumOfPlayers> <LenOfCorpus>"
+
+gameOverMsg :: String
+gameOverMsg = "Game Over"
 
 fileName :: String
 fileName = "assets/words_alpha.txt"
