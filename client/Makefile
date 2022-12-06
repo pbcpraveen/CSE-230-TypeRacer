@@ -1,4 +1,4 @@
-.PHONY: all build run
+.PHONY: all build run test
 
 all: build run
 
@@ -7,3 +7,6 @@ build:
 
 run:
 	stack --verbosity error exec TypeRacer-exe
+
+test:
+	stack test

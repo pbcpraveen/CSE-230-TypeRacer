@@ -70,6 +70,7 @@ test-suite TypeRacer-test
       TypeRacer
     , base >=4.7 && <5
     , brick
+    , hspec
     , microlens-mtl
     , microlens-th
     , mtl
