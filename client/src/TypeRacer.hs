@@ -17,14 +17,13 @@ import Brick.Widgets.Core
   ( (<+>), (<=>)
   , str
   , updateAttrMap
-  , overrideAttr, withAttr, emptyWidget, vLimit
+  , withAttr, emptyWidget, vLimit
   )
 import Brick.Util (fg, bg, on, clamp)
 import qualified Brick.BChan
 import qualified Graphics.Vty
 import Control.Concurrent (threadDelay)
 import GHC.Conc (forkIO)
-import Data.Char (toLower)
 
 import Network.Socket
 import Network.Socket.ByteString (recv, sendAll)
@@ -59,23 +58,28 @@ partition target actual = (common, wrong, rest)
 drawUI :: MyAppState () -> [Widget ()]
 drawUI p = [ui]
     where
-      -- use mapAttrNames
-      bars = map (\a@(player, rank, prog) -> vLimit 10 (str player <+> (updateAttrMap
-             (A.mapAttrNames [ (xDoneAttr, P.progressCompleteAttr)
-                             , (xToDoAttr, P.progressIncompleteAttr)
-                             ]
-             ) $ bar $ prog))) (_racers p)
-      barWidget [] = emptyWidget
-      barWidget [x] = x
-      barWidget _ = foldl1 (<=>) bars
-      lbl c = Just $ show $ fromEnum $ c * 100
-      bar v = P.progressBar (lbl v) v
       (common, wrong, rest) = partition (_corpus p) (_typed p)
       common' = withAttr correctAttr $ str common
       wrong' = withAttr wrongAttr $ str wrong
       rest' = withAttr restAttr $ str rest
-    --   ui = (barWidget bars) <=>
-      ui = (barWidget bars) <=> (vLimit 20 common' <+> wrong' <+> rest')
+
+      barWidget [] = emptyWidget
+      barWidget [x] = x
+      barWidget _ = foldl1 (\b1 b2 -> b1 <=> str "\n" <=> b2) bars
+      lbl v r | r > 100   = Just $ show (fromEnum $ if v < 0 then 0 else v*100) ++ "%"
+              | otherwise = Just $ "Finished " ++ show r
+      bar v r = P.progressBar (lbl v r) v
+
+      bars = map (\(player, rank, prog) -> vLimit 10 (str (player ++ "  ") <+> updateAttrMap
+             (A.mapAttrNames [ (xDoneAttr, P.progressCompleteAttr)
+                             , (xToDoAttr, P.progressIncompleteAttr)
+                             ]
+             ) (bar prog rank))) (_racers p)
+    
+      ui = 
+           barWidget bars <=>
+           str "\n" <=>
+           (vLimit 20 common' <+> wrong' <+> rest')
 
 
 data TimerEvent = Interrupt deriving (Show)
@@ -101,7 +105,6 @@ handleReceive = do
     Just byteStrProgresses' -> do
       racers .= map step progresses
       where strProgresses = BS.unpack byteStrProgresses'
-            -- progresses = splitOn "|" strProgresses
             progresses = map (splitOn ",") $ splitOn "|" strProgresses
             step [name, rank, prog] = (name, read rank :: Int, read prog :: Float)
             step _                  = error "Invalid progress"
@@ -152,7 +155,6 @@ theMap = A.attrMap V.defAttr
          , (correctAttr,               V.withStyle (fg $ V.RGBColor 0   150 0) V.bold)
          , (wrongAttr,                 V.withStyle (fg $ V.RGBColor 150 0   0) V.bold)
          , (restAttr,                  fg $ V.RGBColor 200 200 200)
-         , (P.progressIncompleteAttr,  fg V.yellow)
          ]
 
 theApp :: M.App (MyAppState ()) TimerEvent ()
@@ -180,7 +182,7 @@ theMain = do
   print welcome
   textToType <- recv sock 1024
 
-  let initialState = MyAppState (show textToType) "" 0.0 sock []
+  let initialState = MyAppState (BS.unpack textToType) "" 0.0 sock []
 
   eventChan <- Brick.BChan.newBChan 10
 
