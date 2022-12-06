@@ -105,40 +105,36 @@ appEventHandler (T.VtyEvent e) = case e of
   _                        -> return ()
 appEventHandler _ = return ()
 
-theBaseAttr :: A.AttrName
-theBaseAttr = A.attrName "theBase"
-
 xDoneAttr, xToDoAttr :: A.AttrName
-xDoneAttr = theBaseAttr <> A.attrName "X:done"
-xToDoAttr = theBaseAttr <> A.attrName "X:remaining"
+xDoneAttr = A.attrName "X:done"
+xToDoAttr = A.attrName "X:remaining"
 
 yDoneAttr, yToDoAttr :: A.AttrName
-yDoneAttr = theBaseAttr <> A.attrName "Y:done"
-yToDoAttr = theBaseAttr <> A.attrName "Y:remaining"
+yDoneAttr = A.attrName "Y:done"
+yToDoAttr = A.attrName "Y:remaining"
 
 zDoneAttr, zToDoAttr :: A.AttrName
-zDoneAttr = theBaseAttr <> A.attrName "Z:done"
-zToDoAttr = theBaseAttr <> A.attrName "Z:remaining"
+zDoneAttr = A.attrName "Z:done"
+zToDoAttr = A.attrName "Z:remaining"
 
 correctAttr :: A.AttrName
-correctAttr = theBaseAttr <> A.attrName "correct"
+correctAttr = A.attrName "correct"
 
 wrongAttr :: A.AttrName
-wrongAttr = theBaseAttr <> A.attrName "wrong"
+wrongAttr = A.attrName "wrong"
 
 restAttr :: A.AttrName
-restAttr = theBaseAttr <> A.attrName "rest"
+restAttr = A.attrName "rest"
 
 theMap :: A.AttrMap
 theMap = A.attrMap V.defAttr
-         [ (theBaseAttr,               bg V.white)
-         , (xDoneAttr,                 V.black `on` V.white)
+         [ (xDoneAttr,                 V.black `on` V.white)
          , (xToDoAttr,                 V.white `on` V.black)
          , (yDoneAttr,                 V.magenta `on` V.yellow)
          , (zDoneAttr,                 V.blue `on` V.green)
          , (zToDoAttr,                 V.blue `on` V.red)
-         , (correctAttr,               fg V.green)
-         , (wrongAttr,                 fg V.red)
+         , (correctAttr,               V.withStyle (fg $ V.RGBColor 0   150 0) V.bold)
+         , (wrongAttr,                 V.withStyle (fg $ V.RGBColor 150 0   0) V.bold)
          , (restAttr,                  fg $ V.RGBColor 200 200 200)
          , (P.progressIncompleteAttr,  fg V.yellow)
          ]
