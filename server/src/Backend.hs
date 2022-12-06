@@ -39,18 +39,25 @@ server nPlayers corpus = do
 signal :: Socket -> String -> IO ()  -- function to send a message to a socket
 signal sock msg = sendAll sock (BS.pack msg)
 
--- makePersonalizedMsg :: String -> String -> String
+-- 
+makePersonalizedMsg :: (Client, SockAddr) -> [(Client, SockAddr)] -> String
+makePersonalizedMsg (Client rank prog _, addr) sortedList = foldl step initAcc filteredList
+  where
+    filteredList = filter (\(_, otherAddr) -> otherAddr /= addr) sortedList
+    step acc (Client otherRank otherProg _, otherAddr) = acc ++ ('|':show (otherAddr, otherRank, otherProg))
+    initAcc = show ("You", rank, prog)
 
 -- for each client, send personalized progress msg with their own name switched to "you"
 -- for other users, their name is "user<port number>"
 -- each client progress is encoded in a 3 typle (name, progress, ranking) where ranking is an integer -1 if not done 
 broadcastProgress :: Map SockAddr Client -> IO ()
-broadcastProgress dict = broadcastMsg dict (show $ sortedClients dict) --helper (toList dict)
---   where
---     helper []                  = return ()
---     helper ((addr, client):xs) = do
---       signal (target_sock client)
---       helper xs
+broadcastProgress dict = helper (sortedClients dict) (sortedClients dict)
+  where
+    helper []              _          = return ()
+    helper (x@(cli, _):xs) sortedList = do
+      let msg = makePersonalizedMsg x sortedList
+      signal (target_sock cli) msg
+      helper xs sortedList
 
 broadcastMsg :: Map SockAddr Client -> String -> IO ()
 broadcastMsg dict msg = helper (toList dict)
