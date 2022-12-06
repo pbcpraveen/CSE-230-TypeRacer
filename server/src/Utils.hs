@@ -49,6 +49,9 @@ initRanking = 1000
 initProgress :: Double
 initProgress = -1
 
+lineWidth :: Int
+lineWidth = 80
+
 data Client = Client { 
   ranking     :: Int,
   progress    :: Double,
@@ -83,6 +86,12 @@ shuffle xs = do
     n = length xs
     newArray :: Int -> [a] -> IO (IOArray Int a)
     newArray m =  newListArray (1,m)
+
+-- insertLineBreaks :: [String] -> String
+-- insertLineBreaks strs = fst $ foldl step ("", 0) strs
+--   where
+--     step (acc, curLen) subStr | curLen + length subStr >= lineWidth = (acc ++ subStr ++ "\n", 0)
+--                               | otherwise                           = (acc ++ subStr ++ " ", curLen + length subStr + 1)
 
 -- read the file and return first n shuffled words
 generateCorpus :: Int -> IO String

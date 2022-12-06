@@ -27,13 +27,13 @@ topServer = do
 
 server :: Int -> String -> IO ()
 server nPlayers corpus = do
-  sock <- socket AF_INET Stream 0                -- create socket
-  setSocketOption sock ReuseAddr 1               -- closes the socket immediately so can be reused
-  bind sock (SockAddrInet 1234 0)                -- 0 here means accept any IP
-  listen sock nPlayers                           -- wait for clients to connect. 2 for queue size
-  players <- execStateT (joinGame sock 2) empty  -- now we have created the sock object, pass it into the main loop
-  broadcastMsg players corpus                    -- send the text to type
-  results <- execStateT (gameLoop True) players  -- start the game loop
+  sock <- socket AF_INET Stream 0                       -- create socket
+  setSocketOption sock ReuseAddr 1                      -- closes the socket immediately so can be reused
+  bind sock (SockAddrInet 1234 0)                       -- 0 here means accept any IP
+  listen sock nPlayers                                  -- wait for clients to connect. 2 for queue size
+  players <- execStateT (joinGame sock nPlayers) empty  -- wait for nPlayers to join
+  broadcastMsg players corpus                           -- send the text to type
+  results <- execStateT (gameLoop True) players         -- start the game loop
   print results
 
 signal :: Socket -> String -> IO ()  -- function to send a message to a socket
@@ -83,6 +83,7 @@ joinGame _ 0 = do
   lift (threadDelay delay)  -- wait for 0.1 second so msgs don't get mixed up
   return ()
 joinGame sock n = do
+  lift $ putStrLn ("waiting for " ++ show n ++ " more players")
   (client_sock, addr) <- lift (accept sock)
   lift (print addr)
   dict <- get

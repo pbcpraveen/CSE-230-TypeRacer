@@ -17,7 +17,7 @@ import Brick.Widgets.Core
   ( (<+>), (<=>)
   , str
   , updateAttrMap
-  , withAttr, emptyWidget, vLimit
+  , withAttr, emptyWidget, vLimit, hLimit
   )
 import Brick.Util (fg, bg, on, clamp)
 import qualified Brick.BChan
@@ -47,21 +47,30 @@ data MyAppState n = MyAppState {
 
 makeLenses ''MyAppState
 
-partition :: String -> String -> (String, String, String)
-partition target actual = (common, wrong, rest)
+widthLimit :: Int
+widthLimit = 80
+
+partition :: String -> String -> [(Char, Int)]
+partition target actual = common ++ wrong ++ rest
   where
     commonLen = length $ takeWhile (uncurry (==)) $ zip target actual
-    common = take commonLen actual
-    wrong = drop commonLen actual
-    rest = drop commonLen target
+    common = zip (take commonLen target) (repeat 0)
+    wrong = zip (drop commonLen actual) (repeat 1)
+    rest = zip (drop commonLen target) (repeat 2)
 
 drawUI :: MyAppState () -> [Widget ()]
 drawUI p = [ui]
     where
-      (common, wrong, rest) = partition (_corpus p) (_typed p)
-      common' = withAttr correctAttr $ str common
-      wrong' = withAttr wrongAttr $ str wrong
-      rest' = withAttr restAttr $ str rest
+      labelled = partition (_corpus p) (_typed p)
+      -- split labelled into parts with max size of widthLimit
+      lines = chunksOf widthLimit labelled
+      lineWidgets = map step lines
+        where step line = foldl (\w (c, i) -> w <+> withAttr (attr i) (str [c])) emptyWidget line
+              attr 0 = correctAttr
+              attr 1 = wrongAttr
+              attr 2 = restAttr
+              attr _ = restAttr
+      textBlock = foldl1 (<=>) lineWidgets
 
       barWidget [] = emptyWidget
       barWidget [x] = x
@@ -76,10 +85,10 @@ drawUI p = [ui]
                              ]
              ) (bar prog rank))) (_racers p)
     
-      ui = 
+      ui = str "\n" <=>
            barWidget bars <=>
            str "\n" <=>
-           (vLimit 20 common' <+> wrong' <+> rest')
+           textBlock
 
 
 data TimerEvent = Interrupt deriving (Show)
@@ -153,7 +162,7 @@ theMap = A.attrMap V.defAttr
          [ (xDoneAttr,                 V.black `on` V.white)
          , (xToDoAttr,                 V.white `on` V.black)
          , (correctAttr,               V.withStyle (fg $ V.RGBColor 0   150 0) V.bold)
-         , (wrongAttr,                 V.withStyle (fg $ V.RGBColor 150 0   0) V.bold)
+         , (wrongAttr,                 V.withStyle (bg $ V.RGBColor 150 0   0) V.bold)
          , (restAttr,                  fg $ V.RGBColor 200 200 200)
          ]
 
