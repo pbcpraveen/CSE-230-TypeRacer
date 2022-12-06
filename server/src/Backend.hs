@@ -60,7 +60,7 @@ makePersonalizedMsg (Client rank prog _, addr) sortedList = foldl step initAcc f
 
 -- for each client, send personalized progress msg with their own name switched to "you"
 -- for other users, their name is "user<port number>"
--- each client progress is encoded in a 3 typle (name, progress, ranking) where ranking is an integer -1 if not done 
+-- each client progress is encoded in a 3 typle (name, progress, ranking) where ranking is an integer -1 if not done
 broadcastProgress :: Map SockAddr Client -> IO ()
 broadcastProgress dict = helper (sortedClients dict) (sortedClients dict)
   where
