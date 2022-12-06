@@ -6,7 +6,7 @@ module TypeRacer (theMain) where
 import qualified Graphics.Vty as V
 import Lens.Micro.Mtl
 import Lens.Micro.TH
-import Control.Monad (void)
+import Control.Monad (void, forever)
 
 import qualified Brick.AttrMap as A
 import qualified Brick.Main as M
@@ -24,6 +24,8 @@ import Brick.Widgets.Core
 import Brick.Util (fg, bg, on, clamp)
 import qualified Brick.BChan
 import qualified Graphics.Vty
+import Control.Concurrent (threadDelay)
+import GHC.Conc (forkIO)
 
 data MyAppState n = MyAppState { _x, _y, _z :: Float }
 
@@ -55,22 +57,24 @@ drawUI p = [ui]
            str "" <=>
            str "Hit 'x', 'y', or 'z' to advance progress, or 'q' to quit"
 
-newtype TimerEvent = Interrupt ()
+data TimerEvent = Interrupt deriving (Show)
+
 myEventHandler :: T.BrickEvent () TimerEvent -> T.EventM () (MyAppState ()) ()
 myEventHandler _ = 
        let valid = clamp (0.0 :: Float) 1.0 in
        z %= valid . (+ 0.01)
-  
 
-appEventHandler :: T.BrickEvent () e -> T.EventM () (MyAppState ()) ()
-appEventHandler (T.VtyEvent e) =
-    let valid = clamp (0.0 :: Float) 1.0
-    in case e of
-         V.EvKey (V.KChar 'x') [] -> x %= valid . (+ 0.05)
-         V.EvKey (V.KChar 'y') [] -> y %= valid . (+ 0.03)
-         V.EvKey (V.KChar 'z') [] -> z %= valid . (+ 0.02)
-         V.EvKey (V.KChar 'q') [] -> M.halt
-         _ -> return ()
+valid :: Float -> Float
+valid = clamp (0.0 :: Float) 1.0
+
+appEventHandler :: T.BrickEvent () TimerEvent -> T.EventM () (MyAppState ()) ()
+appEventHandler (T.AppEvent Interrupt) = z %= valid . (+ 0.01)
+appEventHandler (T.VtyEvent e) = case e of
+  V.EvKey (V.KChar 'x') [] -> x %= valid . (+ 0.05)
+  V.EvKey (V.KChar 'y') [] -> y %= valid . (+ 0.03)
+  V.EvKey (V.KChar 'z') [] -> z %= valid . (+ 0.02)
+  V.EvKey (V.KChar 'q') [] -> M.halt
+  _                        -> return ()
 appEventHandler _ = return ()
 
 theBaseAttr :: A.AttrName
@@ -99,7 +103,7 @@ theMap = A.attrMap V.defAttr
          , (P.progressIncompleteAttr,  fg V.yellow)
          ]
 
-theApp :: M.App (MyAppState ()) e ()
+theApp :: M.App (MyAppState ()) TimerEvent ()
 theApp =
     M.App { M.appDraw = drawUI
           , M.appChooseCursor = M.showFirstCursor
@@ -111,9 +115,17 @@ theApp =
 initialState :: MyAppState ()
 initialState = MyAppState 0.25 0.18 0.63
 
+interruptThread :: Brick.BChan.BChan TimerEvent -> IO ()
+interruptThread chan = do
+  Brick.BChan.writeBChan chan Interrupt
+  threadDelay 1000000
+
 theMain :: IO ()
 theMain = do
   eventChan <- Brick.BChan.newBChan 10
+
+  void $ forkIO $ forever $ interruptThread eventChan
+
   let buildVty = Graphics.Vty.mkVty Graphics.Vty.defaultConfig
   initialVty <- buildVty
   finalState <- M.customMain initialVty buildVty (Just eventChan) theApp initialState
