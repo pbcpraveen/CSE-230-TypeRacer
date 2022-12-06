@@ -178,7 +178,7 @@ theApp =
 interruptThread :: Brick.BChan.BChan TimerEvent -> IO ()
 interruptThread chan = do
   Brick.BChan.writeBChan chan Interrupt
-  threadDelay 50000
+  threadDelay 50000  -- 0.005 second
 
 theMain :: IO ()
 theMain = do

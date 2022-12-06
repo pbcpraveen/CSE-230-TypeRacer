@@ -27,3 +27,27 @@ The game starts when each joined user readies and ends when all users have finis
 tldr `make`
 
 The above invokes `stack build` and `stack exec` if you want to do just one action.
+
+## Milestone 3
+
+1. What is the architecture of your application (the key components)? There are two main parts of the application: the client and the server.
+
+   The client is responsible for displaying the game interface and sending requests to the server. The server is responsible for managing the game state and sending updates to the clients.
+   
+   In particular, the server has a game loop that runs every 100ms. It multiplexes among all the connected clients and checks on each client if they have typed anything. If it does not receive a ping from a client in 10ms it moves on to the next. This is how we are able to get around concurency and syncing the state of the game across multiple worker threads. The server is also responsible for generating text in the beginning and sending updates to the clients every cycle.
+
+   The client is run on brick and has 2 events that it listens to: keyboard events and a custom timer interrupt event. The keyboard events are used to update what the user has typed and display the diff text on the screen. The timer interrupt event is used to receive updates periodically from the server and update the progress bars on the screen.
+
+2. What challenges (if any) did you have so far and how did you solve them?
+
+   - Initially, the biggest challenge was to figure out the architecture of the program. Since it has multiple clients, we had to figure out how to collect each client's state and sync their data on the server side to share the same game state with all the clients. We settled on multiplexing in the end.
+   - Another hurdle was to figure out how to make the client respond to both keyboard events but also network events. This is important because suppose we only listen to keyboard events, then the client will not be able to receive updates from the server. When it is not typing. We solved this by using a custom timer interrupt event that is triggered every 100ms. When the timer fires, we check on the server for information with a timeout.
+   -
+
+3. Do you expect to meet your goals until the deadline?
+
+   Yes. It is done now haha : )
+
+4. If not, how will you modify your goals?
+
+   N/A
