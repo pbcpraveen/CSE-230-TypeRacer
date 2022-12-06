@@ -33,7 +33,11 @@ library
   build-depends:
       base >=4.7 && <5
     , brick
+    , microlens-mtl
+    , microlens-th
+    , mtl
     , network
+    , vty
   default-language: Haskell2010
 
 executable TypeRacer-exe
@@ -47,7 +51,11 @@ executable TypeRacer-exe
       TypeRacer
     , base >=4.7 && <5
     , brick
+    , microlens-mtl
+    , microlens-th
+    , mtl
     , network
+    , vty
   default-language: Haskell2010
 
 test-suite TypeRacer-test
@@ -62,5 +70,9 @@ test-suite TypeRacer-test
       TypeRacer
     , base >=4.7 && <5
     , brick
+    , microlens-mtl
+    , microlens-th
+    , mtl
     , network
+    , vty
   default-language: Haskell2010

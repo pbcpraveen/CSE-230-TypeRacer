@@ -1,7 +1,11 @@
 module Main where
 
 import Brick
-import TypeRacer
+import qualified Brick.Main as M
+
+import Control.Monad (void)
+
+import TypeRacer (theMain)
 
 main :: IO ()
-main = simpleMain ui
+main = theMain
