@@ -17,12 +17,21 @@ import Brick.Widgets.Core
   , vLimit
   , str
   )
+
+import           Brick                  (App (..), AttrName, BrickEvent (..),
+                                         EventM, Location (..),
+                                         Padding (..), Widget, attrMap,
+                                         attrName, defaultMain,
+                                         emptyWidget, fg, halt, padAll,
+                                         padBottom, showCursor, showFirstCursor,
+                                         str, withAttr, (<+>), (<=>))
 import qualified Brick.Widgets.Center as C
 import qualified Brick.Widgets.Edit as E
 import qualified Brick.AttrMap as A
 import qualified Brick.Focus as F
 import Brick.Util (on)
 import Homepage  as H
+import Gamepage as G
 
 corpus :: String
 corpus = "The quick brown fox jumps over the lazy dog"
@@ -30,5 +39,9 @@ corpus = "The quick brown fox jumps over the lazy dog"
 main :: IO ()
 main = do
     st <- M.defaultMain H.homepage H.initialState
-    putStrLn "In input 1 you entered:\n"
-    putStrLn $ unlines $ E.getEditContents $ st^.edit1
+    s <- M.defaultMain (G.app emptyAttr errorAttr resultAttr) (G.initialState corpus)
+    return () 
+    where 
+           emptyAttr = fg . V.ISOColor $ G.fgEmptyCode
+           errorAttr = flip V.withStyle V.bold . fg . V.ISOColor $ G.fgErrorCode
+           resultAttr = fg . V.ISOColor $ G.fgErrorCode

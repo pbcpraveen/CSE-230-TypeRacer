@@ -1,11 +1,9 @@
-module Gamepage
-  ( run
-  ) where
+module Gamepage where
 
 import           Brick                  (App (..), AttrName, BrickEvent (..),
                                          EventM, Location (..),
                                          Padding (..), Widget, attrMap,
-                                         attrName, defaultMain,
+                                         attrName, defaultMain, continueWithoutRedraw,
                                          emptyWidget, fg, halt, padAll,
                                          padBottom, showCursor, showFirstCursor,
                                          str, withAttr, (<+>), (<=>))
@@ -25,9 +23,8 @@ import           Data.List  (groupBy, isPrefixOf)
 import           Data.Maybe (fromJust, isJust)
 import           Data.Time  (UTCTime, diffUTCTime)
 
--- It is often useful to know whether the line / character etc we are
--- considering is "BeforeCursor" or "AfterCursor". More granularity turns out
--- to be unnecessary.
+
+
 data Position
   = BeforeCursor
   | AfterCursor
@@ -42,10 +39,6 @@ data State =
     , hits    :: Integer
     , loop    :: Bool
     }
-
--- For ease of rendering a character in the UI, we tag it as a Hit, Miss, or
--- Empty. Corresponding to the cases of being correctly typed, incorrectly
--- typed (or skipped), or not yet typed.
 data Character
   = Hit Char
   | Miss Char
@@ -54,6 +47,25 @@ data Character
 type Line = [Character]
 
 type Page = [Line]
+
+initialState :: String -> State
+initialState t =
+  State
+    { target = t
+    , input = takeWhile isSpace t
+    , start = Nothing
+    , end = Nothing
+    , strokes = 0
+    , hits = 0
+    , loop = False
+    }
+
+fgEmptyCode :: Word8
+fgEmptyCode = 8
+
+fgErrorCode :: Word8
+fgErrorCode  = 1
+
 
 startClock :: UTCTime -> State -> State
 startClock now s = s {start = Just now}
@@ -126,18 +138,6 @@ applyBackspaceWord s = s {input = reverse . drop n . reverse $ input s}
       | not (isSpace x) && isSpace y = 1
       | otherwise = 1 + toWordBeginning (y : ys)
 
-initialState :: String -> State
-initialState t =
-  State
-    { target = t
-    , input = takeWhile isSpace t
-    , start = Nothing
-    , end = Nothing
-    , strokes = 0
-    , hits = 0
-    , loop = False
-    }
-
 character :: Position -> (Maybe Char, Maybe Char) -> Character
 character _ (Just t, Just i)
   | t == i = Hit t
@@ -177,7 +177,6 @@ wpm s = fromIntegral (countChars s) / (5 * seconds s / 60)
 
 accuracy :: State -> Double
 accuracy s = fromIntegral (hits s) / fromIntegral (strokes s)
-
 emptyAttrName :: AttrName
 emptyAttrName = attrName "empty"
 
@@ -207,6 +206,7 @@ drawResults s =
   withAttr resultAttrName . str $
   printf "%.f words per minute • %.f%% accuracy" (wpm s) (accuracy s * 100)
 
+
 draw :: State -> [Widget ()]
 draw s
   | hasEnded s = pure . center . padAll 1 $ drawText s <=> drawResults s
@@ -214,56 +214,38 @@ draw s
     pure . center . padAll 1 . showCursor () (Location $ cursor s) $
     drawText s <=> str " "
 
-handleChar :: Char -> State -> EventM () (Position State)
-handleChar c s
-  | not $ hasStarted s = do
-    now <- liftIO getCurrentTime
-    startClock now s'
-  | isComplete s' = do
-    now <- liftIO getCurrentTime
-    stopClock now s'
-  | otherwise = s'
-  where
-    s' = applyChar c s
+-- handleChar :: Char -> State -> EventM () State ()
+-- handleChar c s
+--   | not $ hasStarted s = do
+--     now <- liftIO getCurrentTime
+--     let _ = startClock now s' 
+--     continueWithoutRedraw 
+--   | isComplete s' = do
+--     now <- liftIO getCurrentTime
+--     let _ = stopClock now s' 
+--     continueWithoutRedraw
+--   | otherwise = continueWithoutRedraw
+--   where
+--     s' = applyChar c s
 
-handleEvent :: State -> BrickEvent () e -> EventM () (Position State)
-handleEvent s (VtyEvent (EvKey key [MCtrl])) =
-  case key of
-    KChar 'c' -> halt s
-    KChar 'd' -> halt s
-    KChar 'w' ->  applyBackspaceWord s
-    KBS       ->  applyBackspaceWord s
-    _         -> s
-handleEvent s (VtyEvent (EvKey key [MAlt])) =
-  case key of
-    KBS ->  applyBackspaceWord s
-    _   -> s
-handleEvent s (VtyEvent (EvKey key [MMeta])) =
-  case key of
-    KBS ->  applyBackspaceWord s
-    _   -> s
-handleEvent s (VtyEvent (EvKey key []))
-  | hasEnded s =
-    case key of
-      KEnter -> halt s
-      KEsc   -> halt $ s {loop = True}
-      _      -> s
-  | otherwise =
-    case key of
-      KChar c -> handleChar c s
-      KEnter  -> handleChar '\n' s
-      KBS     ->  applyBackspace s
-      KEsc    -> halt $ s {loop = True}
-      _       -> s
-handleEvent s _ = s
+appEvent :: BrickEvent () e -> EventM () State ()
+appEvent (VtyEvent (EvKey KEsc [])) = halt
+
+-- appEvent (VtyEvent (EvKey key [MCtrl])) =
+--   case key of
+--     KChar 'c' -> halt s
+--     KChar 'd' -> halt s
+--     KChar 'w' -> continue $ applyBackspaceWord s
+--     KBS       -> continue $ applyBackspaceWord s
+--     _         -> continue s
 
 app :: Attr -> Attr -> Attr -> App State e ()
 app emptyAttr errorAttr resultAttr =
   App
     { appDraw = draw
     , appChooseCursor = showFirstCursor
-    , appHandleEvent = handleEvent
-    , appStartEvent = return
+    , appHandleEvent = appEvent
+    , appStartEvent = return ()
     , appAttrMap =
         const $
         attrMap
@@ -273,13 +255,3 @@ app emptyAttr errorAttr resultAttr =
           , (resultAttrName, resultAttr)
           ]
     }
-
-run :: Word8 -> Word8 -> String -> IO Bool
-run fgEmptyCode fgErrorCode t = do
-  s <- defaultMain (app emptyAttr errorAttr resultAttr) $ initialState t
-  return $ loop s
-  where
-    emptyAttr = fg . ISOColor $ fgEmptyCode
-    errorAttr = flip withStyle bold . fg . ISOColor $ fgErrorCode
-    -- abusing the fgErrorCode to use as a highlight colour for the results here
-    resultAttr = fg . ISOColor $ fgErrorCode

@@ -34,7 +34,7 @@ library
   ghc-options: -Wall -Wcompat -Widentities -Wincomplete-record-updates -Wincomplete-uni-patterns -Wmissing-export-lists -Wmissing-home-modules -Wpartial-fields -Wredundant-constraints
   build-depends:
       base >=4.7 && <5
-    , brick >=0.21
+    , brick
     , bytestring
     , containers
     , microlens >=0.3.0.0
@@ -56,7 +56,7 @@ executable TypeRacer-exe
   build-depends:
       TypeRacer
     , base >=4.7 && <5
-    , brick >=0.21
+    , brick
     , bytestring
     , containers
     , microlens >=0.3.0.0
@@ -80,7 +80,7 @@ test-suite TypeRacer-test
       Homepage
     , TypeRacer
     , base >=4.7 && <5
-    , brick >=0.21
+    , brick
     , bytestring
     , containers
     , microlens >=0.3.0.0
