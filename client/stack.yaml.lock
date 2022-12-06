@@ -18,6 +18,13 @@ packages:
       size: 583
   original:
     hackage: hspec-2.9.7
+- completed:
+    hackage: split-0.2.3.5@sha256:f472fa7019647cacac3267742a6f7ac0a5c816f9890e80e4b826cd937436de87,2646
+    pantry-tree:
+      sha256: 516449cf535bbfc78cf1a5795d28dd1e0f19b65a07c33a78b45566101fecc534
+      size: 439
+  original:
+    hackage: split-0.2.3.5
 snapshots:
 - completed:
     sha256: b73b2b116143aea728c70e65c3239188998bac5bc3be56465813dacd74215dc5

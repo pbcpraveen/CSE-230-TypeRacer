@@ -24,6 +24,7 @@ source-repository head
 
 library
   exposed-modules:
+      Homepage
       TypeRacer
   other-modules:
       Paths_TypeRacer
@@ -33,10 +34,13 @@ library
   build-depends:
       base >=4.7 && <5
     , brick
+    , bytestring
+    , microlens
     , microlens-mtl
     , microlens-th
     , mtl
     , network
+    , split
     , vty
   default-language: Haskell2010
 
@@ -51,10 +55,13 @@ executable TypeRacer-exe
       TypeRacer
     , base >=4.7 && <5
     , brick
+    , bytestring
+    , microlens
     , microlens-mtl
     , microlens-th
     , mtl
     , network
+    , split
     , vty
   default-language: Haskell2010
 
@@ -70,10 +77,13 @@ test-suite TypeRacer-test
       TypeRacer
     , base >=4.7 && <5
     , brick
+    , bytestring
     , hspec
+    , microlens
     , microlens-mtl
     , microlens-th
     , mtl
     , network
+    , split
     , vty
   default-language: Haskell2010

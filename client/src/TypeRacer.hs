@@ -12,9 +12,7 @@ import qualified Brick.AttrMap as A
 import qualified Brick.Main as M
 import qualified Brick.Types as T
 import qualified Brick.Widgets.ProgressBar as P
-import Brick.Types
-  ( Widget
-  )
+import Brick.Types (Widget)
 import Brick.Widgets.Core
   ( (<+>), (<=>)
   , str
@@ -28,11 +26,18 @@ import Control.Concurrent (threadDelay)
 import GHC.Conc (forkIO)
 import Data.Char (toLower)
 
+import Network.Socket
+import Network.Socket.ByteString (recv, sendAll)
+import qualified Data.ByteString.Char8 as BS  -- avoids putStrLn conflict
+import Control.Monad.IO.Class
+
+import Homepage (getIP)
+
 data MyAppState n = MyAppState {
-  _x, _y, _z :: Float,
   _corpus :: String,
   _typed :: String,
-  _percentage :: Float
+  _percentage :: Float,
+  _sock :: Socket
 } deriving (Show)
 
 makeLenses ''MyAppState
@@ -86,8 +91,11 @@ computePercentage target actual = fromIntegral common / fromIntegral len
     common = length $ takeWhile (uncurry (==)) $ zip target actual
     len = length target
 
+sendProgress :: Socket -> Float -> IO ()
+sendProgress sock prog = sendAll sock (BS.pack $ show prog) 
+
 appEventHandler :: T.BrickEvent () TimerEvent -> T.EventM () (MyAppState ()) ()
-appEventHandler (T.AppEvent Interrupt) = z %= valid . (+ 0.01)
+-- appEventHandler (T.AppEvent Interrupt) = z %= valid . (+ 0.01)
 appEventHandler (T.VtyEvent e) = case e of
   V.EvKey V.KEsc        [] -> M.halt
   V.EvKey V.KBS         [] -> do
@@ -97,11 +105,18 @@ appEventHandler (T.VtyEvent e) = case e of
     target <- use corpus
     actual <- use typed
     percentage .= computePercentage target actual
+    sock <- use sock
+    prog <- use percentage
+    liftIO $ sendProgress sock prog
+
   V.EvKey (V.KChar  c ) [] -> do
     typed %= (++ [c])
     target <- use corpus
     actual <- use typed
     percentage .= computePercentage target actual
+    sock <- use sock
+    prog <- use percentage
+    liftIO $ sendProgress sock prog
   _                        -> return ()
 appEventHandler _ = return ()
 
@@ -148,9 +163,6 @@ theApp =
           , M.appAttrMap = const theMap
           }
 
-initialState :: MyAppState ()
-initialState = MyAppState 0.25 0.18 0.63 "Hello, world!" "" 0.0
-
 interruptThread :: Brick.BChan.BChan TimerEvent -> IO ()
 interruptThread chan = do
   Brick.BChan.writeBChan chan Interrupt
@@ -158,6 +170,17 @@ interruptThread chan = do
 
 theMain :: IO ()
 theMain = do
+
+  addr <- getIP
+
+  sock <- socket AF_INET Stream 0
+  connect sock addr
+  welcome <- recv sock 1024
+  print welcome
+  textToType <- recv sock 1024
+
+  let initialState = MyAppState (show textToType) "" 0.0 sock
+
   eventChan <- Brick.BChan.newBChan 10
 
   void $ forkIO $ forever $ interruptThread eventChan

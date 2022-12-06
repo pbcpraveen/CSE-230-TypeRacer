@@ -27,6 +27,9 @@ dependencies:
 - mtl
 - microlens-mtl
 - microlens-th
+- bytestring
+- microlens
+- split
 
 ghc-options:
 - -Wall
