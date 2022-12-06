@@ -30,14 +30,20 @@ import Network.Socket
 import Network.Socket.ByteString (recv, sendAll)
 import qualified Data.ByteString.Char8 as BS  -- avoids putStrLn conflict
 import Control.Monad.IO.Class
+import System.Timeout (timeout)
+import Data.List.Split
 
 import Homepage (getIP)
 
+recvTimeout :: Int
+recvTimeout = 10000  -- 0.01 second
+
 data MyAppState n = MyAppState {
-  _corpus :: String,
-  _typed :: String,
+  _corpus     :: String,
+  _typed      :: String,
   _percentage :: Float,
-  _sock :: Socket
+  _sock       :: Socket,
+  _racers     :: [(String, Int, Float)]
 } deriving (Show)
 
 makeLenses ''MyAppState
@@ -92,10 +98,24 @@ computePercentage target actual = fromIntegral common / fromIntegral len
     len = length target
 
 sendProgress :: Socket -> Float -> IO ()
-sendProgress sock prog = sendAll sock (BS.pack $ show prog) 
+sendProgress sock prog = sendAll sock (BS.pack $ '|':show prog) 
+
+handleReceive :: T.EventM () (MyAppState ()) ()
+handleReceive = do
+  sock <- use sock
+  byteStrProgresses <- liftIO (timeout recvTimeout (recv sock 1024))
+  case byteStrProgresses of
+    Nothing -> return ()
+    Just byteStrProgresses' -> do
+      racers .= map step progresses
+      where strProgresses = BS.unpack byteStrProgresses'
+            -- progresses = splitOn "|" strProgresses
+            progresses = map (splitOn ",") $ splitOn "|" strProgresses
+            step [name, rank, prog] = (name, read rank :: Int, read prog :: Float)
+            step _                  = error "Invalid progress"
 
 appEventHandler :: T.BrickEvent () TimerEvent -> T.EventM () (MyAppState ()) ()
--- appEventHandler (T.AppEvent Interrupt) = z %= valid . (+ 0.01)
+appEventHandler (T.AppEvent Interrupt) = handleReceive
 appEventHandler (T.VtyEvent e) = case e of
   V.EvKey V.KEsc        [] -> M.halt
   V.EvKey V.KBS         [] -> do
@@ -166,7 +186,7 @@ theApp =
 interruptThread :: Brick.BChan.BChan TimerEvent -> IO ()
 interruptThread chan = do
   Brick.BChan.writeBChan chan Interrupt
-  threadDelay 1000000
+  threadDelay 50000
 
 theMain :: IO ()
 theMain = do
@@ -179,7 +199,7 @@ theMain = do
   print welcome
   textToType <- recv sock 1024
 
-  let initialState = MyAppState (show textToType) "" 0.0 sock
+  let initialState = MyAppState (show textToType) "" 0.0 sock []
 
   eventChan <- Brick.BChan.newBChan 10
 
