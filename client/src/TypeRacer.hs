@@ -112,11 +112,16 @@ handleReceive = do
   case byteStrProgresses of
     Nothing -> return ()
     Just byteStrProgresses' -> do
-      racers .= map step progresses
-      where strProgresses = BS.unpack byteStrProgresses'
-            progresses = map (splitOn ",") $ splitOn "|" strProgresses
-            step [name, rank, prog] = (name, read rank :: Int, read prog :: Float)
-            step _                  = error "Invalid progress"
+      if byteStrProgresses' == BS.pack "Game Over"
+        then do
+          liftIO (threadDelay 2000000)
+          M.halt
+        else do
+          racers .= map step progresses
+          where strProgresses = BS.unpack byteStrProgresses'
+                progresses = map (splitOn ",") $ splitOn "|" strProgresses
+                step [name, rank, prog] = (name, read rank :: Int, read prog :: Float)
+                step _                  = error "Invalid progress"
 
 appEventHandler :: T.BrickEvent () TimerEvent -> T.EventM () (MyAppState ()) ()
 appEventHandler (T.AppEvent Interrupt) = handleReceive

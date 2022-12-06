@@ -6,7 +6,7 @@ build:
 	stack build
 
 run:
-	stack --verbosity error exec Backend-exe 1 10
+	stack --verbosity error exec Backend-exe 4 4
 
 test:
 	stack test
