@@ -74,8 +74,7 @@ test-suite TypeRacer-test
       test
   ghc-options: -Wall -Wcompat -Widentities -Wincomplete-record-updates -Wincomplete-uni-patterns -Wmissing-export-lists -Wmissing-home-modules -Wpartial-fields -Wredundant-constraints -threaded -rtsopts -with-rtsopts=-N
   build-depends:
-      Homepage
-    , TypeRacer
+      TypeRacer
     , base >=4.7 && <5
     , brick
     , bytestring
