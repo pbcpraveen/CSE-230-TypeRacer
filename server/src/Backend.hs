@@ -27,30 +27,48 @@ topServer = do
 
 server :: Int -> String -> IO ()
 server nPlayers corpus = do
-  sock <- socket AF_INET Stream 0                -- create socket
-  setSocketOption sock ReuseAddr 1               -- closes the socket immediately so can be reused
-  bind sock (SockAddrInet 1234 0)                -- 0 here means accept any IP
-  listen sock nPlayers                           -- wait for clients to connect. 2 for queue size
-  players <- execStateT (joinGame sock 2) empty  -- now we have created the sock object, pass it into the main loop
-  broadcastMsg players corpus                    -- send the text to type
-  results <- execStateT (gameLoop True) players  -- start the game loop
+  sock <- socket AF_INET Stream 0                       -- create socket
+  setSocketOption sock ReuseAddr 1                      -- closes the socket immediately so can be reused
+  bind sock (SockAddrInet 1234 0)                       -- 0 here means accept any IP
+  listen sock nPlayers                                  -- wait for clients to connect. 2 for queue size
+  players <- execStateT (joinGame sock nPlayers) empty  -- wait for nPlayers to join
+  broadcastMsg players corpus                           -- send the text to type
+  results <- execStateT (gameLoop True) players         -- start the game loop
   print results
 
 signal :: Socket -> String -> IO ()  -- function to send a message to a socket
 signal sock msg = sendAll sock (BS.pack msg)
 
--- makePersonalizedMsg :: String -> String -> String
+padCenter :: Int -> String -> String
+padCenter n str | n <= length str = str
+                | otherwise       = replicate frontLen ' ' ++ str ++ replicate backLen ' '
+  where
+    padLen = n - length str
+    frontLen = padLen `div` 2
+    backLen = padLen - frontLen
+
+-- take after the first colon
+addrToGuestName :: SockAddr -> String
+addrToGuestName addr = padCenter 10 $ "user" ++ dropWhile (/= ':') (show addr)
+
+makePersonalizedMsg :: (Client, SockAddr) -> [(Client, SockAddr)] -> String
+makePersonalizedMsg (Client rank prog _, addr) sortedList = foldl step initAcc filteredList
+  where
+    filteredList = filter (\(_, otherAddr) -> otherAddr /= addr) sortedList
+    step acc (Client otherRank otherProg _, otherAddr) = acc ++ ('|' : addrToGuestName otherAddr ++ "," ++ show otherRank ++ ","  ++ show otherProg)
+    initAcc = padCenter 10 "You" ++ ","  ++ show rank ++ ","  ++ show prog
 
 -- for each client, send personalized progress msg with their own name switched to "you"
 -- for other users, their name is "user<port number>"
 -- each client progress is encoded in a 3 typle (name, progress, ranking) where ranking is an integer -1 if not done
 broadcastProgress :: Map SockAddr Client -> IO ()
-broadcastProgress dict = broadcastMsg dict (show $ sortedClients dict) --helper (toList dict)
---   where
---     helper []                  = return ()
---     helper ((addr, client):xs) = do
---       signal (target_sock client)
---       helper xs
+broadcastProgress dict = helper (sortedClients dict) (sortedClients dict)
+  where
+    helper []              _          = return ()
+    helper (x@(cli, _):xs) sortedList = do
+      let msg = makePersonalizedMsg x sortedList
+      signal (target_sock cli) msg
+      helper xs sortedList
 
 broadcastMsg :: Map SockAddr Client -> String -> IO ()
 broadcastMsg dict msg = helper (toList dict)
@@ -65,6 +83,7 @@ joinGame _ 0 = do
   lift (threadDelay delay)  -- wait for 0.1 second so msgs don't get mixed up
   return ()
 joinGame sock n = do
+  lift $ putStrLn ("waiting for " ++ show n ++ " more players")
   (client_sock, addr) <- lift (accept sock)
   lift (print addr)
   dict <- get
@@ -81,16 +100,19 @@ receiveProgress ((Client rank _ sock, addr):xs) counter
     case maybeMsg of
       Nothing  -> receiveProgress xs counter -- just ignore the client if they don't respond
       Just msg -> do
-        lift (print msg)
-        dict <- get  -- get old dict
-        case readMaybe (BS.unpack msg) :: Maybe Double of
-          Nothing        -> receiveProgress xs counter
-          Just 1         -> do
-            put (adjust (\client -> client {ranking = counter, progress = 1}) addr dict)
-            receiveProgress xs (counter+1)  -- increment ranking counter
-          Just new_prog  -> do
-            put (adjust (\client -> client {progress = new_prog}) addr dict)
-            receiveProgress xs counter
+        if BS.null msg then receiveProgress xs counter else do
+          lift (print msg)
+          let msg' = last (BS.split '|' msg)
+          lift (print msg')
+          dict <- get  -- get old dict
+          case readMaybe (BS.unpack msg') :: Maybe Double of
+            Nothing        -> receiveProgress xs counter
+            Just 1         -> do
+              put (adjust (\client -> client {ranking = counter, progress = 1}) addr dict)
+              receiveProgress xs (counter+1)  -- increment ranking counter
+            Just new_prog  -> do
+              put (adjust (\client -> client {progress = new_prog}) addr dict)
+              receiveProgress xs counter
 
 gameShouldContinue :: Map SockAddr Client -> Bool
 gameShouldContinue dict = helper (toList dict)

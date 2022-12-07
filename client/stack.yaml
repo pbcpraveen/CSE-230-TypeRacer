@@ -38,7 +38,9 @@ packages:
 #   commit: e7b331f14bcffb8367cd58fbfc8b40ec7642100a
 #
 extra-deps: [
-  brick-1.4
+  brick-1.4,
+  hspec-2.9.7,
+  split-0.2.3.5
 ]
 
 # Override default flag values for local packages and extra-deps

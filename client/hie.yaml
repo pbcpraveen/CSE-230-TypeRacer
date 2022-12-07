@@ -1,0 +1,10 @@
+cradle:
+  cabal:
+    - path: "test/Spec.hs"
+      component: "TypeRacer:test:TypeRacer-test"
+
+    - path: "app/Main.hs"
+      component: "TypeRacer:exe:TypeRacer-exe"
+
+    - path: "src/TypeRacer.hs"
+      component: "lib:TypeRacer"

@@ -23,14 +23,13 @@ dependencies:
 - base >= 4.7 && < 5
 - brick
 - network
-- bytestring
-- containers
+- vty
 - mtl
-- vty >= 5.36
-- microlens >= 0.3.0.0
-- microlens-th
 - microlens-mtl
-- time
+- microlens-th
+- bytestring
+- microlens
+- split
 
 ghc-options:
 - -Wall
@@ -67,4 +66,4 @@ tests:
     - -with-rtsopts=-N
     dependencies:
     - TypeRacer
-    - Homepage
+    - hspec

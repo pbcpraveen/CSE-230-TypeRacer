@@ -24,7 +24,6 @@ source-repository head
 
 library
   exposed-modules:
-      Gamepage
       Homepage
       TypeRacer
   other-modules:
@@ -36,14 +35,13 @@ library
       base >=4.7 && <5
     , brick
     , bytestring
-    , containers
-    , microlens >=0.3.0.0
+    , microlens
     , microlens-mtl
     , microlens-th
     , mtl
     , network
-    , time
-    , vty >=5.36
+    , split
+    , vty
   default-language: Haskell2010
 
 executable TypeRacer-exe
@@ -58,14 +56,13 @@ executable TypeRacer-exe
     , base >=4.7 && <5
     , brick
     , bytestring
-    , containers
-    , microlens >=0.3.0.0
+    , microlens
     , microlens-mtl
     , microlens-th
     , mtl
     , network
-    , time
-    , vty >=5.36
+    , split
+    , vty
   default-language: Haskell2010
 
 test-suite TypeRacer-test
@@ -82,12 +79,12 @@ test-suite TypeRacer-test
     , base >=4.7 && <5
     , brick
     , bytestring
-    , containers
-    , microlens >=0.3.0.0
+    , hspec
+    , microlens
     , microlens-mtl
     , microlens-th
     , mtl
     , network
-    , time
-    , vty >=5.36
+    , split
+    , vty
   default-language: Haskell2010
