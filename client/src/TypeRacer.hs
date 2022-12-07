@@ -17,7 +17,7 @@ import Brick.Widgets.Core
   ( (<+>), (<=>)
   , str
   , updateAttrMap
-  , overrideAttr, withAttr
+  , overrideAttr, withAttr, emptyWidget, vLimit
   )
 import Brick.Util (fg, bg, on, clamp)
 import qualified Brick.BChan
@@ -60,30 +60,22 @@ drawUI :: MyAppState () -> [Widget ()]
 drawUI p = [ui]
     where
       -- use mapAttrNames
-      -- xBar = updateAttrMap
-      --        (A.mapAttrNames [ (xDoneAttr, P.progressCompleteAttr)
-      --                        , (xToDoAttr, P.progressIncompleteAttr)
-      --                        ]
-      --        ) $ bar $ _x p
-      -- -- or use individual mapAttrName calls
-      -- yBar = updateAttrMap
-      --        (A.mapAttrName yDoneAttr P.progressCompleteAttr .
-      --         A.mapAttrName yToDoAttr P.progressIncompleteAttr) $
-      --        bar $ _y p
-      -- -- or use overrideAttr calls
-      -- zBar = overrideAttr P.progressCompleteAttr zDoneAttr $
-      --        overrideAttr P.progressIncompleteAttr zToDoAttr $
-      --        bar $ _z p
-      -- lbl c = Just $ show $ fromEnum $ c * 100
-      -- bar v = P.progressBar (lbl v) v
+      bars = map (\a@(player, rank, prog) -> vLimit 10 (str player <+> (updateAttrMap
+             (A.mapAttrNames [ (xDoneAttr, P.progressCompleteAttr)
+                             , (xToDoAttr, P.progressIncompleteAttr)
+                             ]
+             ) $ bar $ prog))) (_racers p)
+      barWidget [] = emptyWidget
+      barWidget [x] = x
+      barWidget _ = foldl1 (<=>) bars
+      lbl c = Just $ show $ fromEnum $ c * 100
+      bar v = P.progressBar (lbl v) v
       (common, wrong, rest) = partition (_corpus p) (_typed p)
       common' = withAttr correctAttr $ str common
       wrong' = withAttr wrongAttr $ str wrong
       rest' = withAttr restAttr $ str rest
-      ui = --(str "X: " <+> xBar) <=>
-           --(str "Y: " <+> yBar) <=>
-           --(str "Z: " <+> zBar) <=>
-           common' <+> wrong' <+> rest'
+    --   ui = (barWidget bars) <=>
+      ui = (barWidget bars) <=> (vLimit 20 common' <+> wrong' <+> rest')
 
 
 data TimerEvent = Interrupt deriving (Show)
@@ -144,14 +136,6 @@ xDoneAttr, xToDoAttr :: A.AttrName
 xDoneAttr = A.attrName "X:done"
 xToDoAttr = A.attrName "X:remaining"
 
-yDoneAttr, yToDoAttr :: A.AttrName
-yDoneAttr = A.attrName "Y:done"
-yToDoAttr = A.attrName "Y:remaining"
-
-zDoneAttr, zToDoAttr :: A.AttrName
-zDoneAttr = A.attrName "Z:done"
-zToDoAttr = A.attrName "Z:remaining"
-
 correctAttr :: A.AttrName
 correctAttr = A.attrName "correct"
 
@@ -165,9 +149,6 @@ theMap :: A.AttrMap
 theMap = A.attrMap V.defAttr
          [ (xDoneAttr,                 V.black `on` V.white)
          , (xToDoAttr,                 V.white `on` V.black)
-         , (yDoneAttr,                 V.magenta `on` V.yellow)
-         , (zDoneAttr,                 V.blue `on` V.green)
-         , (zToDoAttr,                 V.blue `on` V.red)
          , (correctAttr,               V.withStyle (fg $ V.RGBColor 0   150 0) V.bold)
          , (wrongAttr,                 V.withStyle (fg $ V.RGBColor 150 0   0) V.bold)
          , (restAttr,                  fg $ V.RGBColor 200 200 200)
