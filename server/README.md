@@ -8,3 +8,20 @@ The logic of the backend goes like this:
 5. Boardcasting is done every cycle of the game loop. Currently each cycle takes a bit over 1 second depending on how many clients join and how fast they type. The worst case scenario is that none of the clients are typing, in which case we have to wait for 1+0.1*number of clients for each broadcast to run.
 
 Try the test client in `test/test_client.py`. The interface is not pretty but once you start 2 clients (and the server), you will receive the text to type. After that, you can type in a real number between 0 and 1 to update your typing progress.
+
+
+# Front-end
+
+The Following steps summarize what happens in the front-end.
+
+1. Get the server-IP to connect to.
+
+2. Wait for other clients to join the game. 
+
+3. Get the corpus to type. 
+
+4. Start the game. 
+
+5. Game exits when all clients have finished. 
+
+6. Get final report.
